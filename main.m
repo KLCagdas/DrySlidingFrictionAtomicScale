@@ -1,53 +1,29 @@
-# time and time steps
-N = 100;
-Nstep = 1000;
-
-# positions
-zi0 = 1;
-x0 = 0:1:N;   z0 = zi0 .* ones(0, N);
-xt0 = 0:1:N;   zt0 = 0:1:N;
-x = x0;   z = z0;   xt = xt0;   zt = zt0;
-
-# velocities
-vx0 = zeros(1, N);    vz0 = zeros(1, N);
-vtx0 = zeros(1, N);    vtz0 = zeros(1, N);    vD0 = zeros(1, N);
-vx = vx0;   vz = vz0;   vtx = vtx0;   vtz = vtz0;   vD = vD0;
-
-# equations
-LenJones = 0; eq2 = 0; eq3 = 0; vT = 0; r = 0; deriv_LenJones = 0; perp_force = 0;  FN = 0;
-
-# attributes
-E = 0.84; s = 2.56;
-kT = 2; kX = 3; kpX = 4; kZ = 5;
-dt = 0.1;
-mt = 0.1; mi = 0.1;
-cons_LJ = 24*E*s^6;
+variables
 
 for n=1:Nstep
-  dx = x - xt;    dz = z - zt;
+  [ztBar, deriv_ztBar] = find_ztBar(lenzt, x, xt, xts, z, zt, cons_LJ, s, ztBars, FN);
+  dx = x - xt;   dz = z - ztBar;
   rhoSqr = (dx.^2 + dz.^2);
-  deriv_LenJones = cons_LJ * (rhoSqr.^-4 - 2 * s^6 * rhoSqr.^-7);
-    
-  # force updates
-  Fix = -1 * (dx .* deriv_LenJones + kX * (x - x0) + 2*kpX * x - kX * (x(1, 3:end) + x(1, 1:end)));    # index problem; add the required values manually
-  Fiz = -1 * (dz .* deriv_LenJones + kZ * (z * 2 - (z0 + 1)));
-  Ftx = -1 * (dz .* deriv_LenJones + kT * (xt - xD));    # change the deriv_LenJones
+  deriv_LenJones = cons_LJ .* (rhoSqr.^-4 - 2*s^6 * rhoSqr.^-7);
   
-  # velocity updates
-  vx += Fix * dt/mi;   Vz += Fiz * dt/mi;   vtx += Ftx * dt/mt;
+  % force updates
+  Fx = -1 * (dx .* deriv_LenJones + kX * (x - x0) + 2*kpX * x - kX * (xx + x(1, 1:end)));   % try to write xx in a matrix form, but not as a new matrix
+  Fz = -1 * (dz .* deriv_LenJones + kZ * (z - z0));
+  Ftx = -1 * ((sum(dz .* deriv_LenJones) + FN * deriv_ztBar + kT * (xt - xD)));    # check if the derivative is correct in terms of zt_Bar
+  Fx(1) = Fx(length(Fx)) = 0;
+  Fz(1) = Fz(length(Fz)) = 0;
+  plot(x, z, '*')
+  pause(0.1)
   
-  # position updates
-  x += vx * dt;   z += vz * dt;
-  xt += vtx * dt;   zt += vtz * dt;
+  % velocity updates
+  vx = vx + Fx * dt/m;   vz = vz + Fz * dt/m;     vtx = vtx + Ftx * dt/mt;
+  
+  % potential of the whole system (VT) update
+  #sys_pot += 4*E*(s^12 / rhoSqr^6 - s^6 / rhoSqr^3) + kT/2 * (xt - xD)^2 + kX/2 * (x - x0)^2 + kpX/2 * ((xx - xx0) - (x - x0))^2 + kZ/2 * (z - z0)^2 + FN * ztBar; 
+  # check whether (xx - x) is in coordination with the article
+  
+  % position updates
+  x = x + vx * dt;   z = z + vz * dt;
+  xt = xt + vtx * dt;   xts = [xt xts];   xD = xD + vD * dt;
+  sys_pot = 0;
 end
-
-function getForce()
-  for i=1:N
-    rhoSqr = ((x(i) - xt(i))^2 + (z(i) - zt(i))^2);
-    FN += (z(i) - zt(i)) * (rhoSqr^-4 - 2 * s^6 * rhoSqr^-7);
-  end
-  
-  FN *= cEq;
-  
-end
-
