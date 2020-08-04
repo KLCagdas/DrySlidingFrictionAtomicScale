@@ -7,8 +7,8 @@ function [ztBar, deriv_ztBar] = find_ztBar(lenzt, x, xt, xts, z, zt, cons_LJ, s,
   end
   try
     ztBar = spline(FNs, zt, FN);
-    ztBars = [ztBar, ztBars];
-    deriv_ztBar = (ztBars(2) - ztBar) / (xts(2) - xt);
+    ztBars = [ztBar, ztBars];   # last value of ztBar at the beginning, the first value at the end 
+    deriv_ztBar = (ztBars(2) - ztBar) / (xts(2) - xt);    # written like this due to ztBars' structure
   catch
     printf("No result is found for ztBar expected from interpolation of FN\n");
     return
