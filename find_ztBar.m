@@ -5,12 +5,12 @@ function [ztBar, deriv_ztBar] = find_ztBar(lenzt, x, xt, xts, z, zt, cons_LJ, s,
     deriv_LenJones = cons_LJ .* (rhoSqr.^-4 - 2*s^6 * rhoSqr.^-7);
     FNs(i) = sum(dz .* deriv_LenJones * (-1));
   end
-  % try
+  try
     ztBar = spline(FNs, zt, FN);
     ztBars = [ztBar, ztBars];
-    deriv_ztBar = (ztBars(2) - ztBar) / (xts(2) - xt);    # check if it's working appropriately, and consider to move it to the main code
-  %catch
-   % printf("No result is found for ztBar expected from interpolation of FN\n");
-    %return
-  %end_try_catch 
+    deriv_ztBar = (ztBars(2) - ztBar) / (xts(2) - xt);
+  catch
+    printf("No result is found for ztBar expected from interpolation of FN\n");
+    return
+  end_try_catch 
 end
