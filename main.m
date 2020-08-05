@@ -14,7 +14,7 @@ for n=1:Nstep
   Fz(1) = Fz(length(Fz)) = 0;
   
   % plot
-  plot(x, z, 'o', "MarkerSize", 8)
+  plot(x, z, 'ko', "markerfacecolor", "b", "MarkerSize", 8)
   pause(0.1)
  
   % velocity updates
